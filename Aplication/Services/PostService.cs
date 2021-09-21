@@ -23,7 +23,11 @@ namespace Application.Services
             _mapper = mapper;
         }
 
-        
+        public IQueryable<PostDto> GetAllPosts()
+        {
+           var posts = _postRepository.GetAll();
+            return _mapper.ProjectTo<PostDto>(posts);
+        }
 
         public async Task<IEnumerable<PostDto>> GetAllPostsAsync(int pageNumber, int pageSize, string sortField, bool ascending, string filterBy)
         {
@@ -36,6 +40,8 @@ namespace Application.Services
         {
             return await _postRepository.GetAllCountAsync(filterby);
         }  
+
+
         public async Task<PostDto> GetPostByIdAsync(int id)
         {
             var post = await _postRepository.GetByIdAsync(id);
@@ -80,6 +86,6 @@ namespace Application.Services
             await _postRepository.DeleteAsync(postToDelete);
         }
 
-      
+        
     }
 }

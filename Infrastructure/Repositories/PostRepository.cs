@@ -20,6 +20,12 @@ namespace Infrastructure.Repositories
             _bloggerContext = bloggerContext;
         }
 
+        public IQueryable<Post> GetAll()
+        {
+            return _bloggerContext.Posts.AsQueryable();
+        }
+
+
         public async Task<IEnumerable<Post>> GetAllAsync(int pageNumber, int pageSize, string sortField, bool ascending, string filterBy)
         {
 
@@ -79,6 +85,6 @@ namespace Infrastructure.Repositories
 
         }
 
-       
+      
     }
 }

@@ -20,6 +20,11 @@ using Application.Mappings;
 using Microsoft.EntityFrameworkCore;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc.Versioning;
+using OData.Swagger.Services;
+using Microsoft.AspNet.OData.Extensions;
+using Microsoft.OData.Edm;
+using Microsoft.AspNet.OData.Builder;
+using Application.DTO;
 
 namespace WebAPI
 {
@@ -43,7 +48,9 @@ namespace WebAPI
             
             services.AddAutoMapper(typeof(MappingProfile));
 
-            services.AddControllers();
+            services.AddControllers().AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true;}
+           );
+            
             services.AddApiVersioning(x =>
             {
                 x.DefaultApiVersion = new ApiVersion(1, 0);
@@ -52,11 +59,14 @@ namespace WebAPI
                 x.ApiVersionReader = new HeaderApiVersionReader("x-api version");
             });
 
+            services.AddOData();
+
             services.AddSwaggerGen(c =>
             {
                 c.EnableAnnotations();
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "WebAPI", Version = "v1" });
             });
+            services.AddOdataSwaggerSupport();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -77,8 +87,19 @@ namespace WebAPI
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.EnableDependencyInjection();
+                endpoints.Filter().Select().OrderBy().Count().MaxTop(10).Expand().SkipToken();
+                endpoints.MapODataRoute("odata", "odata", GetEdmModel());
                 endpoints.MapControllers();
+                
             });
+            
+        }
+        public static IEdmModel GetEdmModel()
+        {
+            var builder = new ODataConventionModelBuilder();
+            builder.EntitySet<PostDto>("Posts");
+            return builder.GetEdmModel();
         }
     }
 }
