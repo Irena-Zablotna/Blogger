@@ -2,6 +2,7 @@
 using Application.DTO;
 using Application.Interfaces;
 using Microsoft.AspNet.OData;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Linq;
@@ -16,9 +17,11 @@ using WebAPI.Wrappers;
 namespace WebAPI.Controllers.V1
 {
     [ApiVersion("1.0")]
+    [Authorize]
     //[Route("api/{v:apiVersion}/[controller]")]
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
+    
     public class PostsController : ControllerBase
     {
         private readonly IPostService _postService;
