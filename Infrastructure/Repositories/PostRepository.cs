@@ -28,7 +28,7 @@ namespace Infrastructure.Repositories
 
         public async Task<IEnumerable<Post>> GetAllAsync(int pageNumber, int pageSize, string sortField, bool ascending, string filterBy)
         {
-
+            
             return await _bloggerContext.Posts
                 .Where(p=>p.Title.ToLower().Contains(filterBy.ToLower())|| p.Content.ToLower().Contains(filterBy.ToLower()))
                 .OrderByPropertyName(sortField, ascending)

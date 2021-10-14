@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using WebAPI.Filters;
 using WebAPI.Helpers;
@@ -50,8 +51,9 @@ namespace WebAPI.Controllers.V1
 
         // GET: api/Posts
         [SwaggerOperation(Summary = "Retrieve paged, filtered and sorted posts")]
+        [AllowAnonymous]
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] PaginationFilter filter, [FromQuery] SortingFilter sortingFilter, [FromQuery] string filterBy)
+        public async Task<IActionResult> Get([FromQuery] PaginationFilter filter, [FromQuery] SortingFilter sortingFilter, [FromQuery] string filterBy="")
         {
             var validFilter = new PaginationFilter(filter.PageNumber,filter.PageSize);
             var validSortingFilter = new SortingFilter(sortingFilter.SortField, sortingFilter.Ascending);
@@ -66,6 +68,7 @@ namespace WebAPI.Controllers.V1
 
         // GET api/Posts/5
         [SwaggerOperation(Summary = "Retrieve a specific post by unique id")]
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
@@ -94,28 +97,41 @@ namespace WebAPI.Controllers.V1
 
         // POST api/Posts
         [SwaggerOperation(Summary = "Create a new post")]
+        
         [HttpPost]
         public async Task<IActionResult> Create(CreatePostDto newPostDto)
         {
-            var post = await  _postService.AddNewPostAsync(newPostDto);
+            var post = await  _postService.AddNewPostAsync(newPostDto, User.FindFirstValue(ClaimTypes.NameIdentifier));
             return Created($"api/posts/{post.Id}", new Response<PostDto>(post));
         }
 
+
+
         // PUT api/Posts/5
         [SwaggerOperation(Summary = "Update a specific post")]
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update ([FromRoute]int id, [FromBody]UpdatePostDto updatePostDto)
+       
+        [HttpPut]
+        public async Task<IActionResult> Update ([FromBody]UpdatePostDto updatePostDto)
         {
-            var result= await _postService.UpdatePostAsync(id, updatePostDto);
-           if (result == false)
+
+            
+            var userOwnsPost = await _postService.UserOwnsPostAsync(updatePostDto.Id, User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            if (!userOwnsPost)
             {
-                return NotFound();
+                return BadRequest(new Response<bool>()
+                {
+                    Succeeded = false,
+                    Message = "You do not own this post."
+                });
             }
-            else
-            {
+                
+                await _postService.UpdatePostAsync( updatePostDto);
+           
                 return NoContent();
-            }
         }
+
+
 
         // DELETE api/Posts/5
         [SwaggerOperation(Summary = "Delete an existing post")]
@@ -129,7 +145,17 @@ namespace WebAPI.Controllers.V1
             }
             else
             {
-               await _postService.DeleteAsync(id);
+                var userOwnsPost = await _postService.UserOwnsPostAsync(id, User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+                if (!userOwnsPost)
+                {
+                    return BadRequest(new Response<bool>()
+                    {
+                        Succeeded = false,
+                        Message = "You do not own this post."
+                    });
+                }
+                await _postService.DeleteAsync(id);
                 return NoContent();
             }
           

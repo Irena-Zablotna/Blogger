@@ -56,28 +56,20 @@ namespace Application.Services
         //}
 
 
-        public async Task<PostDto> AddNewPostAsync(CreatePostDto newpostDto)
+        public async Task<PostDto> AddNewPostAsync(CreatePostDto newpostDto, string userId)
         {
             var createdPost = _mapper.Map<Post>(newpostDto);
+            createdPost.UserId = userId;
             await _postRepository.AddAsync(createdPost);
             return _mapper.Map<PostDto>(createdPost);
             
         }
 
-        public async Task<bool> UpdatePostAsync(int id, UpdatePostDto updatePostDto)
+        public async Task UpdatePostAsync(UpdatePostDto updatePost)
         {
-            var existingPost = await _postRepository.GetByIdAsync(id);
-            if (existingPost == null)
-            {
-                return false;
-            }
-            else
-            {
-                var postToUpdate = _mapper.Map(updatePostDto, existingPost);
-               await _postRepository.UpdateAsync(postToUpdate);
-            }
-            return true;
-
+            var existingPost = await _postRepository.GetByIdAsync(updatePost.Id);
+            var post = _mapper.Map(updatePost, existingPost);
+            await _postRepository.UpdateAsync(post);
         }
 
         public async Task DeleteAsync(int id)
@@ -86,6 +78,18 @@ namespace Application.Services
             await _postRepository.DeleteAsync(postToDelete);
         }
 
-        
+        public async Task<bool> UserOwnsPostAsync(int postId, string userId)
+        {
+            var post = await _postRepository.GetByIdAsync(postId);
+            if (post==null)
+            {
+                return false;
+            }
+            if (post.UserId!=userId)
+            {
+                return false;
+            }
+            return true;
+        }
     }
 }
